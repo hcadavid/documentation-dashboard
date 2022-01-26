@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author hcadavid
  */
-public class BuildProcessOutputDescription {
+public class PipelineOutputDescription {
 
         private String date;
 
