@@ -6,6 +6,7 @@ package rug.icdtools.icddashboard.controllers;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -51,33 +52,66 @@ public class DocBuildingOutputController {
         return desc;
     }
 
-    @CrossOrigin
-    @GetMapping("/outputs/{pipelineid}/{docname}")
-    PipelineOutputDescription getOutput(@PathVariable String pipelineid, @PathVariable String docname) {
-        if (db.get(pipelineid) == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("pipeline %s not found", pipelineid));
-        } else {
-            PipelineOutputDescription desc = db.get(pipelineid).get(docname);
-            if (desc == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("doc %s information for pipeline %s: not found", docname, pipelineid));
-            } else {
-                return desc;
-            }
-        }
-    }
+
 
     @CrossOrigin
     @GetMapping("/outputs/{pipelineid}")
-    HATEOASWrapper getPipelineOutput(@PathVariable String pipelineid) {
+    HATEOASPipelinesWrapper getPipelineOutput(@PathVariable String pipelineid) {
         if (db.get(pipelineid) == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("pipeline %s not found", pipelineid));
         } else {
-            return new HATEOASWrapper(db.get(pipelineid).values());
+            return new HATEOASPipelinesWrapper(db.get(pipelineid).values());
         }
     }
 
+
+    @CrossOrigin
+    @GetMapping("/outputs/{pipelineid}/{docname}")
+    HATEOASDocWrapper getDocProcessingOutput(@PathVariable String pipelineid,@PathVariable String docname ) {
+        if (db.get(pipelineid) == null || db.get(pipelineid).get(docname) == null) {
+             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("doc %s information for pipeline %s: not found", docname, pipelineid));
+        } else {
+            return new HATEOASDocWrapper(db.get(pipelineid).get(docname).getErrors());
+        }
+    }    
     
-    private class HATEOASWrapper{
+    private class HATEOASDocWrapper{
+
+
+        int count;
+
+        String next;
+
+        String previous;
+        
+        List<String> errors;
+
+        public HATEOASDocWrapper(List<String> errors) {
+            this.errors = errors;
+            count = errors.size();
+            next = null;
+            previous = null;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public String getNext() {
+            return next;
+        }
+
+        public String getPrevious() {
+            return previous;
+        }
+
+        public Collection<String> getErrors() {
+            return errors;
+        }
+        
+    }
+    
+    private class HATEOASPipelinesWrapper {
 
         Collection<PipelineOutputDescription> results;
 
@@ -86,15 +120,14 @@ public class DocBuildingOutputController {
         String next;
 
         String previous;
-        
-        public HATEOASWrapper(Collection<PipelineOutputDescription> results) {
+
+        public HATEOASPipelinesWrapper(Collection<PipelineOutputDescription> results) {
             this.results = results;
             count = results.size();
             next = null;
             previous = null;
         }
-        
-        
+
         public Collection<PipelineOutputDescription> getResults() {
             return results;
         }
@@ -110,12 +143,7 @@ public class DocBuildingOutputController {
         public String getPrevious() {
             return previous;
         }
-        
 
-
-
-        
-        
     }
-    
+
 }

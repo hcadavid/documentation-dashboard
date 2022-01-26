@@ -8,14 +8,16 @@
 //    )
 //  }  
 //}).render(document.getElementById("wrapper"));
+urlp = new URLSearchParams(window.location.search);
+pipid = urlp.get("pipelineid");
 
 
 new gridjs.Grid({
   columns: ['Pokemon', 'URL'],
   server: {
-    url: 'https://pokeapi.co/api/v2/pokemon',
+    url: 'https://documentation-dashboard.herokuapp.com/outputs/11111',
     then: data => data.results.map(pokemon => [
-      pokemon.name, pokemon.url
+      pokemon.date, pokemon.docName
     ])
   } 
 }).render(document.getElementById("wrapper"));
