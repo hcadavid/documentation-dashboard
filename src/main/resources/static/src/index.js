@@ -1,16 +1,16 @@
 $(document).ready(function() {
 
     $.ajax({
-        url: "https://documentation-dashboard.herokuapp.com/outputs/"+pipid
+        url: "https://documentation-dashboard.herokuapp.com/pipelines"
     }).then(function(data) {
         content = data;
 
-        for (let i = 0; i < content.results.length; i++) {
+        for (let i = 0; i < content.length; i++) {
             $('#tbody').append(`
             <tr>
                 <th scope="row">1</th>
-                <td>${content.results[i].docName}</td>
-                <td>${content.results[i].errors[0]}</td>
+                <td>${content[i]}</td>
+                <td><a href="pipelinedetails.html?pipelineid=${content[i]}">Error log</a></td>
             </tr>`);
 
         }

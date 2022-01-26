@@ -6,7 +6,7 @@ $(document).ready(function() {
     content = "";
 
     $.ajax({
-        url: "https://documentation-dashboard.herokuapp.com/outputs/"+pipid
+        url: "https://documentation-dashboard.herokuapp.com/pipelines/"+pipid
     }).then(function(data) {
         content = data;
 
