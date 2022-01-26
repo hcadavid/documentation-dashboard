@@ -1,5 +1,10 @@
 $(document).ready(function() {
 
+    urlp = new URLSearchParams(window.location.search);
+    pipid = urlp.get("pipelineid");
+    docid = urlp.get("docid");
+    content = "";
+
     $.ajax({
         url: "https://documentation-dashboard.herokuapp.com/outputs/"+pipid
     }).then(function(data) {

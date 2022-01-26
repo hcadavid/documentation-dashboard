@@ -4,7 +4,10 @@
  */
 package rug.icdtools.icddashboard.controllers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +40,7 @@ public class DocBuildingOutputController {
     }
 
     @CrossOrigin
-    @PostMapping("/outputs/{pipelineid}/{docname}")
+    @PostMapping("/pipelines/{pipelineid}/{docname}")
     PipelineOutputDescription addOutput(@RequestBody PipelineOutputDescription desc, @PathVariable String pipelineid, @PathVariable String docname) {
         if (db.get(pipelineid) != null) {
             db.get(pipelineid).put(docname, desc);
@@ -52,10 +55,17 @@ public class DocBuildingOutputController {
         return desc;
     }
 
-
+    @CrossOrigin
+    @GetMapping("/pipelines")
+    List<String> getPipelines() {
+        Set<String> pipelines = db.keySet();
+        List<String> sortedPipelines = new ArrayList<>(pipelines);
+        Collections.sort(sortedPipelines,Collections.reverseOrder());
+        return sortedPipelines;        
+    }
 
     @CrossOrigin
-    @GetMapping("/outputs/{pipelineid}")
+    @GetMapping("/pipelines/{pipelineid}")
     HATEOASPipelinesWrapper getPipelineOutput(@PathVariable String pipelineid) {
         if (db.get(pipelineid) == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("pipeline %s not found", pipelineid));
@@ -66,7 +76,7 @@ public class DocBuildingOutputController {
 
 
     @CrossOrigin
-    @GetMapping("/outputs/{pipelineid}/{docname}")
+    @GetMapping("/pipelines/{pipelineid}/{docname}")
     HATEOASDocWrapper getDocProcessingOutput(@PathVariable String pipelineid,@PathVariable String docname ) {
         if (db.get(pipelineid) == null || db.get(pipelineid).get(docname) == null) {
              throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("doc %s information for pipeline %s: not found", docname, pipelineid));
