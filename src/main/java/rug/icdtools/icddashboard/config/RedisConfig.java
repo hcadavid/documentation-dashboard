@@ -26,9 +26,8 @@ public class RedisConfig {
     JedisConnectionFactory jedisConnectionFactory() {
         // Redis URL format: redis://[:password@]host[:port][/db-number][?option=value]
         try {
+            String redisUrl = System.getenv("REDIS_URL");
             
-            String redisUrl = "redis://:redis123@localhost:6379/1";
-            //redis://:pc87c38e8eaefd82a9f145c0922683960f96533675c8050f39004e209e4fa3f82@ec2-54-73-118-203.eu-west-1.compute.amazonaws.com:11969
             if (redisUrl==null){
                 throw new RuntimeException("REDIS_URL sys env not defined.");
             }
