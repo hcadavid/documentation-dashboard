@@ -5,12 +5,14 @@
 package rug.icdtools.icddashboard.persistence;
 
 import org.springframework.data.repository.CrudRepository;
-import rug.icdtools.icddashboard.models.PipelineOutputDescription;
+import org.springframework.stereotype.Repository;
+import rug.icdtools.icddashboard.models.PipelineFailureDescription;
 
 /**
  *
  * @author hcadavid
  */
-public interface PipelineOutputRepository extends CrudRepository<PipelineOutputDescription, Object>{
+@Repository
+public interface FailedPipelinesRepository extends CrudRepository<PipelineFailureDescription, String>{
     
 }

@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import rug.icdtools.icddashboard.models.PipelineOutputDescription;
+import rug.icdtools.icddashboard.models.PipelineFailureDescription;
 
 /**
  *
@@ -30,9 +32,11 @@ import rug.icdtools.icddashboard.models.PipelineOutputDescription;
 public class DocBuildingOutputController {
 
     //                     pipelineid     docname,output
-    private static final HashMap<String, HashMap<String, PipelineOutputDescription>> db = new HashMap<>();
+    private static final HashMap<String, HashMap<String, PipelineFailureDescription>> db = new HashMap<>();
 
-    private RedisTemplate<String, PipelineOutputDescription> template;
+    
+    @Autowired
+    private RedisTemplate<String, PipelineFailureDescription> failuresRedisTemplate;
 
     @GetMapping("/test")
     String test() {
@@ -40,21 +44,38 @@ public class DocBuildingOutputController {
     }
 
     @CrossOrigin
-    @PostMapping("/pipelines/{pipelineid}/{docname}")
-    PipelineOutputDescription addOutput(@RequestBody PipelineOutputDescription desc, @PathVariable String pipelineid, @PathVariable String docname) {
-        if (db.get(pipelineid) != null) {
-            db.get(pipelineid).put(docname, desc);
-        } else {
-            HashMap<String, PipelineOutputDescription> docBuildOutputEntries = new HashMap<>();
-            docBuildOutputEntries.put(docname, desc);
-            db.put(pipelineid, docBuildOutputEntries);
-        }
+    @PostMapping("/icds/{icdid}/{pipelineid}/docerrors")
+    PipelineFailureDescription addOutput(@PathVariable String icdid,@RequestBody PipelineFailureDescription desc, @PathVariable String pipelineid) {
 
-        System.out.println(">>>>done");
+
+        ListOperations<String,PipelineFailureDescription> listOp = failuresRedisTemplate.opsForList();
+        
+        listOp.rightPush("failures:"+icdid+":"+pipelineid,desc);
+        
+                //String.format("failures:%s:%s",icdid,pipelineid), desc);
+        
+        System.out.println(">>>>done:"+String.format("failures:%s:%s",icdid,pipelineid));
 
         return desc;
     }
 
+
+    @CrossOrigin
+    @GetMapping("/icds/{icdid}/{pipelineid}/docerrors")
+    List<PipelineFailureDescription> getDocFailureOutput(@PathVariable String icdid, @PathVariable String pipelineid) {
+        
+        //PipelineFailureDescription fdesc = 
+        List<PipelineFailureDescription> docerrors= failuresRedisTemplate.opsForList().range("failures:"+icdid+":"+pipelineid, 0, -1);
+                              
+        if (docerrors.isEmpty()) {
+             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("error information for pipeline %s: not found",  pipelineid));
+        } else {
+            System.out.println(docerrors);
+            return docerrors;
+        }
+    } 
+    
+    
     @CrossOrigin
     @GetMapping("/pipelines")
     List<String> getPipelines() {
@@ -75,15 +96,7 @@ public class DocBuildingOutputController {
     }
 
 
-    @CrossOrigin
-    @GetMapping("/pipelines/{pipelineid}/{docname}")
-    HATEOASDocWrapper getDocProcessingOutput(@PathVariable String pipelineid,@PathVariable String docname ) {
-        if (db.get(pipelineid) == null || db.get(pipelineid).get(docname) == null) {
-             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("doc %s information for pipeline %s: not found", docname, pipelineid));
-        } else {
-            return new HATEOASDocWrapper(db.get(pipelineid).get(docname).getErrors());
-        }
-    }    
+   
     
     private class HATEOASDocWrapper{
 
@@ -123,7 +136,7 @@ public class DocBuildingOutputController {
     
     private class HATEOASPipelinesWrapper {
 
-        Collection<PipelineOutputDescription> results;
+        Collection<PipelineFailureDescription> results;
 
         int count;
 
@@ -131,14 +144,14 @@ public class DocBuildingOutputController {
 
         String previous;
 
-        public HATEOASPipelinesWrapper(Collection<PipelineOutputDescription> results) {
+        public HATEOASPipelinesWrapper(Collection<PipelineFailureDescription> results) {
             this.results = results;
             count = results.size();
             next = null;
             previous = null;
         }
 
-        public Collection<PipelineOutputDescription> getResults() {
+        public Collection<PipelineFailureDescription> getResults() {
             return results;
         }
 

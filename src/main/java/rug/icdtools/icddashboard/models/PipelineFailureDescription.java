@@ -4,13 +4,14 @@
  */
 package rug.icdtools.icddashboard.models;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  *
  * @author hcadavid
  */
-public class PipelineOutputDescription {
+public class PipelineFailureDescription implements Serializable{
 
         private String date;
 
