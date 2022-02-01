@@ -11,8 +11,8 @@ import java.util.List;
  *
  * @author hcadavid
  */
-public class PipelineFailureDescription implements Serializable{
-
+public class PipelineFailureDetails implements Serializable{
+        
         private String date;
 
         private String adocName;
@@ -21,8 +21,7 @@ public class PipelineFailureDescription implements Serializable{
 
         private List<String> fatalErrors;
 
-        
-        
+                
         public String getDate() {
             return date;
         }

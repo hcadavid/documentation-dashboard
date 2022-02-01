@@ -4,17 +4,14 @@
  */
 package rug.icdtools.icddashboard.controllers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import rug.icdtools.icddashboard.models.PipelineFailureDescription;
+import rug.icdtools.icddashboard.models.PipelineFailure;
+import rug.icdtools.icddashboard.models.PipelineFailureDetails;
+import rug.icdtools.icddashboard.models.PublishedICDMetadata;
 
 /**
  *
@@ -31,82 +30,73 @@ import rug.icdtools.icddashboard.models.PipelineFailureDescription;
 @RestController
 public class DocBuildingOutputController {
 
-    //                     pipelineid     docname,output
-    private static final HashMap<String, HashMap<String, PipelineFailureDescription>> db = new HashMap<>();
+    @Autowired
+    private RedisTemplate<String, PipelineFailureDetails> failureDetailsRedisTemplate;
 
+    @Autowired
+    private RedisTemplate<String,String> stringKeyValueRedisTeamplate;
     
     @Autowired
-    private RedisTemplate<String, PipelineFailureDescription> failuresRedisTemplate;
-
+    private RedisTemplate<String,PipelineFailure> buildFailuresRedisTeamplate;
+        
+    @Autowired
+    private RedisTemplate<String,PublishedICDMetadata> icdMetadataTemplate;
+    
     @GetMapping("/test")
     String test() {
         return "Working";
     }
 
     @CrossOrigin
-    @PostMapping("/icds/{icdid}/{pipelineid}/docerrors")
-    PipelineFailureDescription addOutput(@PathVariable String icdid,@RequestBody PipelineFailureDescription desc, @PathVariable String pipelineid) {
-
-
-        ListOperations<String,PipelineFailureDescription> listOp = failuresRedisTemplate.opsForList();
+    @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
+    @Transactional
+    PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
         
-        listOp.rightPush("failures:"+icdid+":"+pipelineid,desc);
-        
-                //String.format("failures:%s:%s",icdid,pipelineid), desc);
-        
-        System.out.println(">>>>done:"+String.format("failures:%s:%s",icdid,pipelineid));
+        failureDetailsRedisTemplate.opsForList().rightPush("failures:" + icdid + ":" + pipelineid, desc);
+        buildFailuresRedisTeamplate.opsForList().rightPush("failures:"+icdid, new PipelineFailure(desc.getDate(), pipelineid));        
+        stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
 
         return desc;
     }
 
-
     @CrossOrigin
-    @GetMapping("/icds/{icdid}/{pipelineid}/docerrors")
-    List<PipelineFailureDescription> getDocFailureOutput(@PathVariable String icdid, @PathVariable String pipelineid) {
-        
+    @GetMapping("/v1/icds/{icdid}/{pipelineid}/errors")
+    List<PipelineFailureDetails> getDocFailureOutput(@PathVariable String icdid, @PathVariable String pipelineid) {
+
         //PipelineFailureDescription fdesc = 
-        List<PipelineFailureDescription> docerrors= failuresRedisTemplate.opsForList().range("failures:"+icdid+":"+pipelineid, 0, -1);
-                              
+        List<PipelineFailureDetails> docerrors = failureDetailsRedisTemplate.opsForList().range("failures:" + icdid + ":" + pipelineid, 0, -1);
+
         if (docerrors.isEmpty()) {
-             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("error information for pipeline %s: not found",  pipelineid));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("error information for pipeline %s: not found", pipelineid));
         } else {
-            System.out.println(docerrors);
             return docerrors;
         }
-    } 
-    
-    
-    @CrossOrigin
-    @GetMapping("/pipelines")
-    List<String> getPipelines() {
-        Set<String> pipelines = db.keySet();
-        List<String> sortedPipelines = new ArrayList<>(pipelines);
-        Collections.sort(sortedPipelines,Collections.reverseOrder());
-        return sortedPipelines;        
     }
 
     @CrossOrigin
-    @GetMapping("/pipelines/{pipelineid}")
-    HATEOASPipelinesWrapper getPipelineOutput(@PathVariable String pipelineid) {
-        if (db.get(pipelineid) == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("pipeline %s not found", pipelineid));
-        } else {
-            return new HATEOASPipelinesWrapper(db.get(pipelineid).values());
-        }
+    @GetMapping("/v1/icds")
+    Set<String> getICDs() {
+        Set<String> members = stringKeyValueRedisTeamplate.opsForSet().members("icdids");
+        return members;
     }
 
-
-   
     
-    private class HATEOASDocWrapper{
-
+    @CrossOrigin
+    @GetMapping("/v1/icds/{icdid}/failedpipelines")
+    List<PipelineFailure> getICDFailedPipelines(@PathVariable String icdid) {
+        List<PipelineFailure> pipelineIds = buildFailuresRedisTeamplate.opsForList().range("failures:"+icdid,0,-1);
+        return pipelineIds;
+    }
+    
+ 
+    private class HATEOASDocWrapper {
 
         int count;
 
         String next;
 
         String previous;
-        
+
         List<String> errors;
 
         public HATEOASDocWrapper(List<String> errors) {
@@ -131,12 +121,12 @@ public class DocBuildingOutputController {
         public Collection<String> getErrors() {
             return errors;
         }
-        
+
     }
-    
+
     private class HATEOASPipelinesWrapper {
 
-        Collection<PipelineFailureDescription> results;
+        Collection<PipelineFailureDetails> results;
 
         int count;
 
@@ -144,14 +134,14 @@ public class DocBuildingOutputController {
 
         String previous;
 
-        public HATEOASPipelinesWrapper(Collection<PipelineFailureDescription> results) {
+        public HATEOASPipelinesWrapper(Collection<PipelineFailureDetails> results) {
             this.results = results;
             count = results.size();
             next = null;
             previous = null;
         }
 
-        public Collection<PipelineFailureDescription> getResults() {
+        public Collection<PipelineFailureDetails> getResults() {
             return results;
         }
 
