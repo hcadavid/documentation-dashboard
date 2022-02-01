@@ -4,7 +4,6 @@
  */
 package rug.icdtools.icddashboard.controllers;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -16,9 +15,11 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import rug.icdtools.icddashboard.models.ICDDescription;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.models.PublishedICDMetadata;
@@ -40,13 +41,28 @@ public class DocBuildingOutputController {
     private RedisTemplate<String,PipelineFailure> buildFailuresRedisTeamplate;
         
     @Autowired
-    private RedisTemplate<String,PublishedICDMetadata> icdMetadataTemplate;
+    private RedisTemplate<String,PublishedICDMetadata> publishedICDMetadataTemplate;
+    
+    @Autowired
+    private RedisTemplate<String,ICDDescription> icdDescriptionTemplate;
     
     @GetMapping("/test")
     String test() {
         return "Working";
     }
 
+    
+    @CrossOrigin
+    @PutMapping("/v1/icds/{icdid}/current")
+    @Transactional
+    PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
+        
+        stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
+        publishedICDMetadataTemplate.opsForValue().set("published:"+icdid, metadata);        
+
+        return metadata;
+    }    
+    
     @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
     @Transactional
@@ -54,7 +70,7 @@ public class DocBuildingOutputController {
         
         failureDetailsRedisTemplate.opsForList().rightPush("failures:" + icdid + ":" + pipelineid, desc);
         buildFailuresRedisTeamplate.opsForList().rightPush("failures:"+icdid, new PipelineFailure(desc.getDate(), pipelineid));        
-        stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
+        icdDescriptionTemplate.opsForSet().add("icdids",new ICDDescription(icdid, "Undefined status"));
 
         return desc;
     }
@@ -75,8 +91,8 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
-    Set<String> getICDs() {
-        Set<String> members = stringKeyValueRedisTeamplate.opsForSet().members("icdids");
+    Set<ICDDescription> getICDs() {
+        Set<ICDDescription> members = icdDescriptionTemplate.opsForSet().members("icdids");
         return members;
     }
 

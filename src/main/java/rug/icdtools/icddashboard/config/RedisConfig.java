@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import rug.icdtools.icddashboard.models.ICDDescription;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.models.PublishedICDMetadata;
@@ -64,6 +65,9 @@ public class RedisConfig {
         return new RedisTemplateBuilder<>(PublishedICDMetadata.class, jedisConnectionFactory()).buildRedisTemplate();
     }
       
-
+    @Bean
+    public RedisTemplate<String, ICDDescription> icdDescriptionRedisTemplate() {
+        return new RedisTemplateBuilder<>(ICDDescription.class, jedisConnectionFactory()).buildRedisTemplate();
+    }
     
 }
