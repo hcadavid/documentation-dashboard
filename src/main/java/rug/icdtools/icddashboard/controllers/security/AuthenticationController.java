@@ -1,7 +1,6 @@
 package rug.icdtools.icddashboard.controllers.security;
 
 
-import com.bfwg.model.UserTokenState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
@@ -22,10 +21,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.security.core.GrantedAuthority;
 import rug.icdtools.icddashboard.common.DeviceProvider;
 import rug.icdtools.icddashboard.models.security.User;
+import rug.icdtools.icddashboard.models.security.UserTokenState;
 import rug.icdtools.icddashboard.security.TokenHelper;
 import rug.icdtools.icddashboard.security.auth.JwtAuthenticationRequest;
 import rug.icdtools.icddashboard.services.CustomUserDetailsService;
@@ -59,12 +61,18 @@ public class AuthenticationController {
     ) throws AuthenticationException, IOException {
 
         // Perform the security
+        //System.out.print(">>>>>PWD:"+authenticationRequest.getPassword());
+        
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authenticationRequest.getUsername(),
                         authenticationRequest.getPassword()
                 )
         );
+        
+        
+                
+        
 
         // Inject into security context
         SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -4,18 +4,23 @@
  */
 package rug.icdtools.icddashboard.services;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import rug.icdtools.icddashboard.models.security.Authority;
 import rug.icdtools.icddashboard.models.security.User;
 
 /**
  *
  * @author hcadavid
  */
+
 public class UserServices implements UserDetailsService{
     
     @Autowired
@@ -33,7 +38,9 @@ public class UserServices implements UserDetailsService{
         } else {
             return user;
         }*/
-        return new User();
+                List<GrantedAuthority> la=new LinkedList<>();
+        la.add(new Authority("ROLE_USER"));
+        return new User("user",passwordEncoder.encode("123"),la);
     }
 
 

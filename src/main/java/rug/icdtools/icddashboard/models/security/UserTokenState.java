@@ -1,4 +1,4 @@
-package com.bfwg.model;
+package rug.icdtools.icddashboard.models.security;
 
 /**
  * Created by fan.jin on 2016-10-17.

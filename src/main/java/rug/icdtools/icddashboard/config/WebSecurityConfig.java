@@ -14,13 +14,12 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import rug.icdtools.icddashboard.security.TokenHelper;
 import rug.icdtools.icddashboard.security.auth.RestAuthenticationEntryPoint;
 import rug.icdtools.icddashboard.security.auth.TokenAuthenticationFilter;
-import rug.icdtools.icddashboard.services.UserServices;
 
 /**
  * Created by fan.jin on 2016-10-19.
@@ -31,13 +30,9 @@ import rug.icdtools.icddashboard.services.UserServices;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     @Autowired
-    private UserServices jwtUserDetailsService;
+    private UserDetailsService jwtUserDetailsService;
 
     @Autowired
     private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
@@ -51,7 +46,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public void configureGlobal( AuthenticationManagerBuilder auth ) throws Exception {
         auth.userDetailsService( jwtUserDetailsService )
-            .passwordEncoder( passwordEncoder() );
+            .passwordEncoder( new BCryptPasswordEncoder() );
     }
 
     @Autowired
@@ -65,6 +60,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(
                         HttpMethod.GET,
+                        "/test",
                         "/",
                         "/auth/**",
                         "/webjars/**",
