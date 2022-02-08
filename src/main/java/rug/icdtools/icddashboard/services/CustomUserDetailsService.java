@@ -42,6 +42,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         //TODO fill
         List<GrantedAuthority> la=new LinkedList<>();
         la.add(new Authority("ROLE_USER"));
+        la.add(new Authority("ROLE_CI"));
         return new User("user",passwordEncoder.encode("123"),la);
     }
 

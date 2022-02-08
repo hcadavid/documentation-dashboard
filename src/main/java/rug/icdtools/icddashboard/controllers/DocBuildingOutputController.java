@@ -10,6 +10,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,6 +55,7 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PutMapping("/v1/icds/{icdid}/current")
+    @PreAuthorize("hasRole('CI')")
     public PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
         
         stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
@@ -64,6 +66,7 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
+    @PreAuthorize("hasRole('CI')")
     public PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
 
         //add to the list of ICD pipelines only once (a list is used to keep the pipelines order)
@@ -98,6 +101,7 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
+    @PreAuthorize("hasRole('CI')")
     Set<ICDDescription> getICDs() {
         Set<ICDDescription> members = icdDescriptionTemplate.opsForSet().members("icdids");
         return members;
