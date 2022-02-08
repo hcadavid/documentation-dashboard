@@ -24,6 +24,8 @@ import rug.icdtools.icddashboard.models.PublishedICDMetadata;
 @EnableTransactionManagement
 public class RedisConfig {
 
+    //TODO remove deprecated methods: https://github.com/cuixiao941010/question/blob/75247b1108eaf02fc186fd13475ec243ee79bbca/src/main/java/com/cx/question/config/RedisConfiguration.java
+    
     @Bean
     JedisConnectionFactory jedisConnectionFactory() {
         // Redis URL format: redis://[:password@]host[:port][/db-number][?option=value]

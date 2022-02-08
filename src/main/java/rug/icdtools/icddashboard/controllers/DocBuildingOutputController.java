@@ -25,7 +25,7 @@ import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.models.PublishedICDMetadata;
 
 /**
- *
+ * TODO: add transactions: https://github.com/spring-projects/spring-data-redis/blob/main/src/main/asciidoc/reference/redis-transactions.adoc
  * @author hcadavid
  */
 @RestController
@@ -54,8 +54,7 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PutMapping("/v1/icds/{icdid}/current")
-    @Transactional
-    PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
+    public PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
         
         stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
         publishedICDMetadataTemplate.opsForValue().set("published:"+icdid, metadata);        
@@ -65,14 +64,19 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
-    @Transactional
-    PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
-        
-        failureDetailsRedisTemplate.opsForList().rightPush("failures:" + icdid + ":" + pipelineid, desc);
-        buildFailuresRedisTeamplate.opsForList().rightPush("failures:"+icdid, new PipelineFailure(desc.getDate(), pipelineid));        
-        icdDescriptionTemplate.opsForSet().add("icdids",new ICDDescription(icdid, "Undefined status"));
+    public PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
+
+        //add to the list of ICD pipelines only once (a list is used to keep the pipelines order)
+        if (!stringKeyValueRedisTeamplate.opsForSet().isMember("failures:" + icdid + ":pipelines", pipelineid)) {
+            buildFailuresRedisTeamplate.opsForList().leftPush("failures:" + icdid, new PipelineFailure(desc.getDate(), pipelineid));
+        }
+
+        stringKeyValueRedisTeamplate.opsForSet().add("failures:" + icdid + ":pipelines", pipelineid);
+        failureDetailsRedisTemplate.opsForList().leftPush("failures:" + icdid + ":" + pipelineid, desc);
+        icdDescriptionTemplate.opsForSet().add("icdids", new ICDDescription(icdid, "Undefined status"));
 
         return desc;
+
     }
 
     @CrossOrigin
@@ -82,7 +86,10 @@ public class DocBuildingOutputController {
         //PipelineFailureDescription fdesc = 
         List<PipelineFailureDetails> docerrors = failureDetailsRedisTemplate.opsForList().range("failures:" + icdid + ":" + pipelineid, 0, -1);
 
-        if (docerrors.isEmpty()) {
+        if (docerrors == null){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, String.format("internal server error while accessing pipeline %s resource.", pipelineid));
+        }
+        else if (docerrors.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("error information for pipeline %s: not found", pipelineid));
         } else {
             return docerrors;
