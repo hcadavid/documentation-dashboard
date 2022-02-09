@@ -4,14 +4,12 @@
  */
 package rug.icdtools.icddashboard.controllers;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,7 +53,6 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PutMapping("/v1/icds/{icdid}/current")
-    @PreAuthorize("hasRole('CI')")
     public PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
         
         stringKeyValueRedisTeamplate.opsForSet().add("icdids", icdid);
@@ -66,7 +63,6 @@ public class DocBuildingOutputController {
     
     @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
-    @PreAuthorize("hasRole('CI')")
     public PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
 
         //add to the list of ICD pipelines only once (a list is used to keep the pipelines order)
@@ -101,7 +97,6 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
-    @PreAuthorize("hasRole('CI')")
     Set<ICDDescription> getICDs() {
         Set<ICDDescription> members = icdDescriptionTemplate.opsForSet().members("icdids");
         return members;
@@ -116,74 +111,5 @@ public class DocBuildingOutputController {
     }
     
  
-    private class HATEOASDocWrapper {
-
-        int count;
-
-        String next;
-
-        String previous;
-
-        List<String> errors;
-
-        public HATEOASDocWrapper(List<String> errors) {
-            this.errors = errors;
-            count = errors.size();
-            next = null;
-            previous = null;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public String getNext() {
-            return next;
-        }
-
-        public String getPrevious() {
-            return previous;
-        }
-
-        public Collection<String> getErrors() {
-            return errors;
-        }
-
-    }
-
-    private class HATEOASPipelinesWrapper {
-
-        Collection<PipelineFailureDetails> results;
-
-        int count;
-
-        String next;
-
-        String previous;
-
-        public HATEOASPipelinesWrapper(Collection<PipelineFailureDetails> results) {
-            this.results = results;
-            count = results.size();
-            next = null;
-            previous = null;
-        }
-
-        public Collection<PipelineFailureDetails> getResults() {
-            return results;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public String getNext() {
-            return next;
-        }
-
-        public String getPrevious() {
-            return previous;
-        }
-
-    }
 
 }

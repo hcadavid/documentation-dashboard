@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import rug.icdtools.icddashboard.common.DeviceProvider;
 import rug.icdtools.icddashboard.models.security.User;
 import rug.icdtools.icddashboard.models.security.UserTokenState;
@@ -53,6 +54,7 @@ public class AuthenticationController {
     @Autowired
     private DeviceProvider deviceProvider;
 
+    @CrossOrigin
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<?> createAuthenticationToken(
             @RequestBody JwtAuthenticationRequest authenticationRequest,
@@ -61,7 +63,7 @@ public class AuthenticationController {
     ) throws AuthenticationException, IOException {
 
         // Perform the security
-        //System.out.print(">>>>>PWD:"+authenticationRequest.getPassword());
+       
         
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
