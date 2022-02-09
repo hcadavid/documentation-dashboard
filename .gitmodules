@@ -1,0 +1,4 @@
+[submodule "react-api-client-poc"]
+	path = react-api-client-poc
+	url = git@github.com:hcadavid/react-api-client-poc.git
+	branch = master
