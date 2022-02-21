@@ -93,14 +93,14 @@ public class DocumentationServices {
     }
 
     
-    public List<PipelineFailureDetails> getFailedPipelineDetails (String icdid, String pipelineid) throws DocumentationServicesException{
+    public List<PipelineFailureDetails> getFailedPipelineDetails (String icdid, String pipelineid) throws DocumentationServicesException, NonExistingResourceException{
         List<PipelineFailureDetails> docerrors = failureDetailsRedisTemplate.opsForList().range("failures:" + icdid + ":" + pipelineid, 0, -1);
 
         if (docerrors == null){
-            throw new DocumentationServicesException(String.format("internal server error while accessing pipeline %s resource.", pipelineid));
+            throw new DocumentationServicesException(String.format("error while accessing pipeline %s resource.", pipelineid));
         }
         else if (docerrors.isEmpty()) {
-            throw new DocumentationServicesException(String.format("error information for pipeline %s: not found", pipelineid));
+            throw new NonExistingResourceException(String.format("pipeline %s: not found", pipelineid));
         } else {
             return docerrors;
         }
