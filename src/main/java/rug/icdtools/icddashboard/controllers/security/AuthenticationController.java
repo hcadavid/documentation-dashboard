@@ -24,8 +24,10 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.server.ResponseStatusException;
 import rug.icdtools.icddashboard.common.DeviceProvider;
 import rug.icdtools.icddashboard.models.security.User;
 import rug.icdtools.icddashboard.models.security.UserTokenState;
@@ -56,37 +58,32 @@ public class AuthenticationController {
 
     @CrossOrigin
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ResponseEntity<?> createAuthenticationToken(
-            @RequestBody JwtAuthenticationRequest authenticationRequest,
-            HttpServletResponse response,
-            Device device
-    ) throws AuthenticationException, IOException {
+    public ResponseEntity<?> createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest, HttpServletResponse response, Device device) {
+        try {
+            final Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            authenticationRequest.getUsername(),
+                            authenticationRequest.getPassword()
+                    )
+            );
 
-        // Perform the security
-       
-        
-        final Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        authenticationRequest.getUsername(),
-                        authenticationRequest.getPassword()
-                )
-        );
-        
-        
-                
-        
+            // Inject into security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Inject into security context
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            // token creation
+            User user = (User) authentication.getPrincipal();
+            String jws = tokenHelper.generateToken(user.getUsername(), device);
+            int expiresIn = tokenHelper.getExpiredIn(device);
+            // Return the token
+            return ResponseEntity.ok(new UserTokenState(jws, expiresIn));
+        } catch (AuthenticationException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, String.format("Token request failed for user "+authenticationRequest.getUsername()));
+        }
 
-        // token creation
-        User user = (User)authentication.getPrincipal();
-        String jws = tokenHelper.generateToken( user.getUsername(), device);
-        int expiresIn = tokenHelper.getExpiredIn(device);
-        // Return the token
-        return ResponseEntity.ok(new UserTokenState(jws, expiresIn));
     }
 
+    
+    
     @RequestMapping(value = "/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshAuthenticationToken(
             HttpServletRequest request,

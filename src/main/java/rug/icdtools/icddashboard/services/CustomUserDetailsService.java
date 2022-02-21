@@ -39,7 +39,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         } else {
             return user;
         }*/
-        //TODO fill
+        //TODO user authentication
+        if (!username.equals("user")){
+            throw new UsernameNotFoundException(String.format("No user found with username '%s'.", username));
+        }
         List<GrantedAuthority> la=new LinkedList<>();
         la.add(new Authority("ROLE_USER"));
         la.add(new Authority("ROLE_CI"));

@@ -11,6 +11,8 @@ import java.io.Serializable;
  * @author hcadavid
  */
 public class ICDDescription implements Serializable {
+    String ICDname;
+    String status;
 
     public ICDDescription(String ICDname, String status) {
         this.ICDname = ICDname;
@@ -38,8 +40,5 @@ public class ICDDescription implements Serializable {
         this.status = status;
     }
     
-    String ICDname;
-    
-    String status;
     
 }
