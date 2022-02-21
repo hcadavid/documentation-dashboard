@@ -4,12 +4,9 @@
  */
 package rug.icdtools.icddashboard.controllers;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -76,7 +73,7 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
-    Set<ICDDescription> getICDs() {
+    Collection<ICDDescription> getICDs() {
         return docServices.getRegisteredICDs();
     }
 
