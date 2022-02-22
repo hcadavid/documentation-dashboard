@@ -14,7 +14,7 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Service;
-import rug.icdtools.icddashboard.models.ICDDescription;
+import rug.icdtools.icddashboard.models.ICDStatus;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.models.PublishedICDMetadata;
@@ -34,9 +34,12 @@ public class DocumentationServices {
 
     @Autowired
     private RedisTemplate<String, PipelineFailure> failuresRedisTemplate;
+    
+    @Autowired
+    private RedisTemplate<String, PublishedICDMetadata> publishedICDsTeamplate;
 
     @Autowired
-    private RedisTemplate<String, ICDDescription> icdDescriptionRedisTemplate;
+    private RedisTemplate<String, ICDStatus> icdDescriptionRedisTemplate;
 
     
     /**
@@ -68,8 +71,8 @@ public class DocumentationServices {
             public List<Object> execute(RedisOperations operations) throws DataAccessException {
                 operations.multi();
                 operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), metadata);
-                //operations.opsForValue().set(String.format(ICD_STATUS,icdid), new ICDDescription(icdid,"Published on "+metadata.getLastUpdate()));
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDDescription(icdid,"Published on "+metadata.getLastUpdate()));
+                String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,"Published on "+creationTimeStamp!=null?creationTimeStamp:"UNDEFINED"));
                 return operations.exec();
             }
         });
@@ -101,7 +104,7 @@ public class DocumentationServices {
                 }
                 
                 //operations.opsForValue().set(String.format(ICD_STATUS, icdid),new ICDDescription(icdid, "Document building failed."));
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDDescription(icdid,"Document building failed."));                                      
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,"Document building failed."));                                      
                 //add the details of the failure
                 operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), desc);
                 
@@ -124,9 +127,9 @@ public class DocumentationServices {
         }
     }
 
-    public Collection<ICDDescription> getRegisteredICDs() {
-        HashOperations<String,String,ICDDescription> hashops = redisTemplate.opsForHash();
-        Map<String,ICDDescription> entries = hashops.entries(ICD_STATUSES_HASH_KEY);
+    public Collection<ICDStatus> getRegisteredICDs() {
+        HashOperations<String,String,ICDStatus> hashops = redisTemplate.opsForHash();
+        Map<String,ICDStatus> entries = hashops.entries(ICD_STATUSES_HASH_KEY);
         return entries.values();        
     }
 
@@ -135,4 +138,19 @@ public class DocumentationServices {
         return pipelineIds;
     }
 
+    /**
+     * 
+     * @param icdid
+     * @return  
+     */
+    public PublishedICDMetadata getPublishedDocumentMetadata(String icdid) throws NonExistingResourceException{
+        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION, icdid));
+        if (metadata==null){
+            throw new NonExistingResourceException("No available metadata for document "+icdid);
+        }
+        else{
+            return metadata;
+        }
+    }
+    
 }

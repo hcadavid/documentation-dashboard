@@ -10,16 +10,16 @@ import java.io.Serializable;
  *
  * @author hcadavid
  */
-public class ICDDescription implements Serializable {
+public class ICDStatus implements Serializable {
     String ICDname;
     String status;
 
-    public ICDDescription(String ICDname, String status) {
+    public ICDStatus(String ICDname, String status) {
         this.ICDname = ICDname;
         this.status = status;
     }
 
-    public ICDDescription() {
+    public ICDStatus() {
     }
 
     

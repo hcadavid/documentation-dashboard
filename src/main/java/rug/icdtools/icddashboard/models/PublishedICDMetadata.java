@@ -6,6 +6,7 @@ package rug.icdtools.icddashboard.models;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -13,27 +14,18 @@ import java.util.List;
  */
 public class PublishedICDMetadata implements Serializable {
 
-    private List<String> otherICDRefs;
+    private Map<String,String> metadata;
     
-    private String url;
+    private List<String> referencedDocs;
     
-    private String sourceURL;
+    private List<String> warnings;   
 
-    private String lastUpdate;
+    public List<String> getReferencedDocs() {
+        return referencedDocs;
+    }
 
-    private List<String> warnings;
-    
-    public String getUrl() {
-        return url;
-    }
-    public void setUrl(String url) {
-        this.url = url;
-    }
-    public String getSourceURL() {
-        return sourceURL;
-    }
-    public void setSourceURL(String sourceURL) {
-        this.sourceURL = sourceURL;
+    public void setReferencedDocs(List<String> referencedDocs) {
+        this.referencedDocs = referencedDocs;
     }
 
     public List<String> getWarnings() {
@@ -44,20 +36,13 @@ public class PublishedICDMetadata implements Serializable {
         this.warnings = warnings;
     }
 
-    public List<String> getOtherICDRefs() {
-        return otherICDRefs;
+    public Map<String, String> getMetadata() {
+        return metadata;
     }
 
-    public void setOtherICDRefs(List<String> otherICDRefs) {
-        this.otherICDRefs = otherICDRefs;
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
 
-    public String getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public void setLastUpdate(String lastUpdate) {
-        this.lastUpdate = lastUpdate;
-    }
 
 }

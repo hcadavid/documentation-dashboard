@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import rug.icdtools.icddashboard.models.ICDDescription;
+import rug.icdtools.icddashboard.models.ICDStatus;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.models.PublishedICDMetadata;
@@ -50,6 +50,20 @@ public class DocBuildingOutputController {
     }    
     
     @CrossOrigin
+    @GetMapping("/v1/icds/{icdid}/current")
+    public PublishedICDMetadata getPublishedDocumentMetadata(@PathVariable String icdid) {
+        try {
+            PublishedICDMetadata metadata = docServices.getPublishedDocumentMetadata(icdid);
+            return metadata;
+        } catch (NonExistingResourceException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found:"+ex.getLocalizedMessage(),ex);
+        }
+        
+    }    
+    
+    
+    
+    @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
     public PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
 
@@ -73,7 +87,7 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
-    Collection<ICDDescription> getICDs() {
+    Collection<ICDStatus> getICDs() {
         return docServices.getRegisteredICDs();
     }
 
