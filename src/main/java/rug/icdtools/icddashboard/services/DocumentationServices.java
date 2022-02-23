@@ -52,6 +52,7 @@ public class DocumentationServices {
      */    
     private static final String ICD_STATUS = "icds:%s:status";
     private static final String ICD_CURRENT_VERSION = "icds:%s:current_version";
+    private static final String ICD_OTHER_VERSIONS = "icds:%s:%s";
     private static final String ICD_FAILED_BUILDS_LIST = " icds:%s:failed_builds_list";
     private static final String ICD_FAILED_BUILDS_SET = " icds:%s:failed_builds_set";
     private static final String ICD_FAILED_BUILD_ERRORS = " icds:%s:failed_builds:%s";
@@ -74,7 +75,9 @@ public class DocumentationServices {
                 operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), metadata);
                 String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
                 String docVersion = metadata.getMetadata().get("COMMIT_TAG");
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,docVersion,"Published on "+creationTimeStamp));
+                ICDStatus docLastVersionStatus = new ICDStatus(icdid,docVersion,"Published on "+creationTimeStamp);
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), docLastVersionStatus);
+                operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS, icdid,docVersion), docLastVersionStatus);
                 return operations.exec();
             }
         });
@@ -109,13 +112,14 @@ public class DocumentationServices {
     }
     
     /**
-     *
+     * 
      * @param icdid
-     * @param desc
+     * @param version
+     * @param failureDesc
      * @param pipelineid
-     * @return
+     * @return 
      */
-    public PipelineFailureDetails registerFailedPipeline(String icdid, PipelineFailureDetails desc, String pipelineid) {
+    public PipelineFailureDetails registerFailedPipeline(String icdid, String version,PipelineFailureDetails failureDesc, String pipelineid) {
 
         boolean firstPipelineFailure = !redisTemplate.opsForSet().isMember(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);
         
@@ -124,23 +128,22 @@ public class DocumentationServices {
             public List<Object> execute(RedisOperations operations) throws DataAccessException {
                 operations.multi();
                 
-                //register a pipeline date/id in a list (to keep its order) and a set (for isMember evaluation in O(1))
-                //when the first error from such pipeline is reported                
-                if (firstPipelineFailure) {
-                    operations.opsForList().leftPush(String.format(ICD_FAILED_BUILDS_LIST, icdid), new PipelineFailure(desc.getDate(), pipelineid));
+                //register the pipelines date/id in a list, to keep their order, and in a set for 'isMember' evaluation in O(1))
+                //As multiple failures can be reported for the same pipeline, this operation is performed only once.               
+                if (firstPipelineFailure) {                    
+                    operations.opsForList().leftPush(String.format(ICD_FAILED_BUILDS_LIST, icdid), new PipelineFailure(icdid,version,pipelineid,failureDesc.getDate()));
                     operations.opsForSet().add(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);                    
                 }
                 
-                //operations.opsForValue().set(String.format(ICD_STATUS, icdid),new ICDDescription(icdid, "Document building failed."));
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,null,"Document building failed."));                                      
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,version,"Document building failed."));                                      
                 //add the details of the failure
-                operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), desc);
+                operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), failureDesc);
                 
                 return operations.exec();
             }
         });
 
-        return desc;
+        return failureDesc;
 
     }
 

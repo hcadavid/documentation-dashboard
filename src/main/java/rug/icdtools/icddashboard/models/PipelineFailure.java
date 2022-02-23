@@ -15,13 +15,33 @@ public class PipelineFailure implements Serializable {
     private String buildDate;
 
     private String pipelineid;
+    
+    private String icdid;
+    
+    private String versionTag;
 
     public PipelineFailure() {
     }
 
-    public PipelineFailure(String buildDate, String pipelineid) {
+    public PipelineFailure(String icdid, String versionTag, String pipelineid, String buildDate) {
         this.buildDate = buildDate;
         this.pipelineid = pipelineid;
+        this.icdid = icdid;
+        this.versionTag = versionTag;
+    }
+
+
+    public String getIcdid() {
+        return icdid;
+    }
+    public void setIcdid(String icdid) {
+        this.icdid = icdid;
+    }
+    public String getVersionTag() {
+        return versionTag;
+    }
+    public void setVersionTag(String versionTag) {
+        this.versionTag = versionTag;
     }
 
     public String getBuildDate() {

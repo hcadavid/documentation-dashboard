@@ -73,10 +73,10 @@ public class DocBuildingOutputController {
     
     
     @CrossOrigin
-    @PostMapping("/v1/icds/{icdid}/{pipelineid}/errors")
-    public PipelineFailureDetails addOutput(@PathVariable String icdid, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
+    @PostMapping("/v1/icds/{icdid}/{version}/{pipelineid}/errors")
+    public PipelineFailureDetails addOutput(@PathVariable String icdid,@PathVariable String version, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
 
-        docServices.registerFailedPipeline(icdid, desc, pipelineid);
+        docServices.registerFailedPipeline(icdid, version, desc, pipelineid);
         return desc;
 
     }
