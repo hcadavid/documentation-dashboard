@@ -132,7 +132,7 @@ public class DocumentationServices {
                 }
                 
                 //operations.opsForValue().set(String.format(ICD_STATUS, icdid),new ICDDescription(icdid, "Document building failed."));
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,"Document building failed."));                                      
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,null,"Document building failed."));                                      
                 //add the details of the failure
                 operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), desc);
                 
