@@ -39,7 +39,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         } else {
             return user;
         }*/
-        //TODO user authentication
+        //TODO get user data from database
         if (!username.equals("user")){
             throw new UsernameNotFoundException(String.format("No user found with username '%s'.", username));
         }

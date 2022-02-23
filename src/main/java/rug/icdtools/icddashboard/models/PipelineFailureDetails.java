@@ -11,47 +11,56 @@ import java.util.List;
  *
  * @author hcadavid
  */
-public class PipelineFailureDetails implements Serializable{
-        
-        private String date;
+public class PipelineFailureDetails implements Serializable {
 
-        private String adocName;
+    String date;
 
-        private List<String> errors;
+    String adocName;
 
-        private List<String> fatalErrors;
+    List<String> errors;
 
-                
-        public String getDate() {
-            return date;
-        }
+    List<String> fatalErrors;
 
-        public void setDate(String date) {
-            this.date = date;
-        }
+    List<String> failedQualityGates;
 
-        public List<String> getErrors() {
-            return errors;
-        }
-
-        public void setErrors(List<String> errors) {
-            this.errors = errors;
-        }
-
-        public List<String> getFatalErrors() {
-            return fatalErrors;
-        }
-
-        public void setFatalErrors(List<String> fatalErrors) {
-            this.fatalErrors = fatalErrors;
-        }
-
-        public String getdocName() {
-            return adocName;
-        }
-
-        public void setdocName(String adocName) {
-            this.adocName = adocName;
-        }
-
+    public List<String> getFailedQualityGates() {
+        return failedQualityGates;
     }
+
+    public void setFailedQualityGates(List<String> failedQualityGates) {
+        this.failedQualityGates = failedQualityGates;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
+    }
+
+    public List<String> getFatalErrors() {
+        return fatalErrors;
+    }
+
+    public void setFatalErrors(List<String> fatalErrors) {
+        this.fatalErrors = fatalErrors;
+    }
+
+    public String getdocName() {
+        return adocName;
+    }
+
+    public void setdocName(String adocName) {
+        this.adocName = adocName;
+    }
+
+ }

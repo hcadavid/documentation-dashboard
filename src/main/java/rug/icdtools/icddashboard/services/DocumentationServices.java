@@ -59,20 +59,22 @@ public class DocumentationServices {
     
 
     /**
-     *
+     * 
      * @param icdid
      * @param metadata
      * @return
+     * @throws DocumentationServicesException 
      */
-    public PublishedICDMetadata updateCurrentlyPublishedICD(String icdid, PublishedICDMetadata metadata) {
-
+    public PublishedICDMetadata updateCurrentlyPublishedICD(String icdid, PublishedICDMetadata metadata) throws DocumentationServicesException {        
+        checkMetadataForCompleteness(metadata);
         List<Object> txResults = redisTemplate.execute(new SessionCallback<List<Object>>() {
             @Override
             public List<Object> execute(RedisOperations operations) throws DataAccessException {
                 operations.multi();
                 operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), metadata);
                 String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,"Published on "+creationTimeStamp!=null?creationTimeStamp:"UNDEFINED"));
+                String docVersion = metadata.getMetadata().get("COMMIT_TAG");
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,docVersion,"Published on "+creationTimeStamp));
                 return operations.exec();
             }
         });
@@ -80,6 +82,32 @@ public class DocumentationServices {
         return metadata;
     }
 
+    /**
+     * 
+     * @param metadata
+     * @throws DocumentationServicesException when one of the predefined properties is missing in metadata
+     */
+    private void checkMetadataForCompleteness(PublishedICDMetadata metadata) throws DocumentationServicesException{
+        
+        String[] metadataProps = new String[]{
+            "BACKEND_CREDENTIALS",
+            "PIPELINE_ID",
+            "PROJECT_NAME",
+            "PIPELINE_ID",
+            "DEPLOYMENT_URL",
+            "SOURCE_URL",
+            "COMMIT_AUTHOR",
+            "CREATION_DATE",
+            "COMMIT_TAG"            
+        };
+        for (String property:metadataProps){
+            if (!metadata.getMetadata().containsKey(property)){
+                throw new DocumentationServicesException("Missing property on metadata:"+property);
+            }
+        }
+        
+    }
+    
     /**
      *
      * @param icdid

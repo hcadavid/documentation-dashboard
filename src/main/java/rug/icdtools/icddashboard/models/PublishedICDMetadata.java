@@ -44,5 +44,12 @@ public class PublishedICDMetadata implements Serializable {
         this.metadata = metadata;
     }
 
+    @Override
+    public String toString() {
+        return "PublishedICDMetadata{" + "metadata=" + metadata + ", referencedDocs=" + referencedDocs + ", warnings=" + warnings + '}';
+    }
+
+ 
+
 
 }

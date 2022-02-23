@@ -12,14 +12,25 @@ import java.io.Serializable;
  */
 public class ICDStatus implements Serializable {
     String ICDname;
+    String version;
     String status;
 
-    public ICDStatus(String ICDname, String status) {
+
+    public ICDStatus(String ICDname, String version, String status) {
         this.ICDname = ICDname;
+        this.version = version;
         this.status = status;
     }
 
+
+
     public ICDStatus() {
+    }
+    public String getVersion() {
+        return version;
+    }
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     

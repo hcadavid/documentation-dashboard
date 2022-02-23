@@ -6,6 +6,8 @@ package rug.icdtools.icddashboard.controllers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -44,11 +46,17 @@ public class DocBuildingOutputController {
     @PutMapping("/v1/icds/{icdid}/current")
     public PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @RequestBody PublishedICDMetadata metadata) {
         
-        docServices.updateCurrentlyPublishedICD(icdid, metadata);
+        try {
+            docServices.updateCurrentlyPublishedICD(icdid, metadata);
+        } catch (DocumentationServicesException ex) {
+            Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.SEVERE, "Invalid request:"+ex.getLocalizedMessage(), ex);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request:"+ex.getLocalizedMessage(),ex);
+        }
 
         return metadata;
     }    
     
+ 
     @CrossOrigin
     @GetMapping("/v1/icds/{icdid}/current")
     public PublishedICDMetadata getPublishedDocumentMetadata(@PathVariable String icdid) {
@@ -56,6 +64,7 @@ public class DocBuildingOutputController {
             PublishedICDMetadata metadata = docServices.getPublishedDocumentMetadata(icdid);
             return metadata;
         } catch (NonExistingResourceException ex) {
+            Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.INFO, "Resource not found:"+ex.getLocalizedMessage(), ex);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found:"+ex.getLocalizedMessage(),ex);
         }
         
