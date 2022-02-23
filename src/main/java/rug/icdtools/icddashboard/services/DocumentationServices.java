@@ -77,7 +77,7 @@ public class DocumentationServices {
                 String docVersion = metadata.getMetadata().get("COMMIT_TAG");
                 ICDStatus docLastVersionStatus = new ICDStatus(icdid,docVersion,"Published on "+creationTimeStamp);
                 operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), docLastVersionStatus);
-                operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS, icdid,docVersion), docLastVersionStatus);
+                operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS, icdid,docVersion), metadata);
                 return operations.exec();
             }
         });
