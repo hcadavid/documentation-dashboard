@@ -14,10 +14,10 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Service;
+import rug.icdtools.core.models.PublishedICDMetadata;
 import rug.icdtools.icddashboard.models.ICDStatus;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
-import rug.icdtools.icddashboard.models.PublishedICDMetadata;
 
 /**
  *
@@ -93,7 +93,6 @@ public class DocumentationServices {
     private void checkMetadataForCompleteness(PublishedICDMetadata metadata) throws DocumentationServicesException{
         
         String[] metadataProps = new String[]{
-            "BACKEND_CREDENTIALS",
             "PIPELINE_ID",
             "PROJECT_NAME",
             "PIPELINE_ID",
@@ -177,11 +176,22 @@ public class DocumentationServices {
     public PublishedICDMetadata getPublishedDocumentMetadata(String icdid) throws NonExistingResourceException{
         PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION, icdid));
         if (metadata==null){
-            throw new NonExistingResourceException("No available metadata for document "+icdid);
+            throw new NonExistingResourceException("No available metadata for the last version of document "+icdid);
         }
         else{
             return metadata;
         }
     }
+   
+
+    public PublishedICDMetadata getPublishedDocumentMetadata(String icdid, String versionTag) throws NonExistingResourceException{
+        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_OTHER_VERSIONS, icdid, versionTag));
+        if (metadata==null){
+            throw new NonExistingResourceException(String.format("No available metadata for version %s of document %s",icdid,versionTag));
+        }
+        else{
+            return metadata;
+        }
+    }    
     
 }

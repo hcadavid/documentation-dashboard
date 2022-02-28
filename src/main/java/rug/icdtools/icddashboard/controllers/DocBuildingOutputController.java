@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import rug.icdtools.core.models.PublishedICDMetadata;
 import rug.icdtools.icddashboard.models.ICDStatus;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
-import rug.icdtools.icddashboard.models.PublishedICDMetadata;
 import rug.icdtools.icddashboard.services.DocumentationServices;
 import rug.icdtools.icddashboard.services.DocumentationServicesException;
 import rug.icdtools.icddashboard.services.NonExistingResourceException;
@@ -71,6 +71,19 @@ public class DocBuildingOutputController {
     }    
     
     
+    @CrossOrigin
+    @GetMapping("/v1/icds/{icdid}/{versionTag}")
+    public PublishedICDMetadata addSuccesfulBuildMetadata(@PathVariable String icdid, @PathVariable String versionTag) {
+        
+        try {
+            PublishedICDMetadata metadata = docServices.getPublishedDocumentMetadata(icdid,versionTag);
+            return metadata;
+        } catch (NonExistingResourceException ex) {
+            Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.INFO, "Resource not found:"+ex.getLocalizedMessage(), ex);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found:"+ex.getLocalizedMessage(),ex);
+        }
+    }  
+
     
     @CrossOrigin
     @PostMapping("/v1/icds/{icdid}/{version}/{pipelineid}/errors")

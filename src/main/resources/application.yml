@@ -3,6 +3,6 @@ app:
 
 jwt:
   header: Authorization
-  expires_in: 30 # 5 minutes
+  expires_in: 3000 # 5 minutes
   mobile_expires_in: 600 # 10 minutes
   secret: XBWn1VPP94sATisco8dRx1vMLOxq4aTrH89XNNAmqUwoExcIgbES7iAAftDzRTeTsGvDCNy8C2CYsXzi8SJMJPB55WrTww74yQ9Xa9VRH5xGJHlAofdhVH1AeLN5Pqp2kSXZkYpcn2NzxeaumS3xA4vVWPQvMirqWs198tFE3Aao5SQn09FVnniwfp2G8kVRiD19JK7yRQnhp6SgmoTYl2DdxUxOkhsRbD142Yj0Abz5BZI7E1nNLfXQD4
