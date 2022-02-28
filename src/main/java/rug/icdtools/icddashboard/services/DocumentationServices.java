@@ -38,8 +38,6 @@ public class DocumentationServices {
     @Autowired
     private RedisTemplate<String, PublishedICDMetadata> publishedICDsTeamplate;
 
-    @Autowired
-    private RedisTemplate<String, ICDStatus> icdDescriptionRedisTemplate;
 
     
     /**

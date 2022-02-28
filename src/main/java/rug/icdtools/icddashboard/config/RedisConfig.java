@@ -15,6 +15,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import rug.icdtools.core.models.PublishedICDMetadata;
+import rug.icdtools.icddashboard.models.PipelineFailure;
+import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 
 @Configuration
 @EnableTransactionManagement
@@ -46,7 +49,7 @@ public class RedisConfig {
     }
 
     
-    @Bean
+    /*@Bean
     RedisTemplate genericRedisTemplate() {
 
         RedisTemplate<String, Object> template = new RedisTemplate<>();
@@ -58,7 +61,42 @@ public class RedisConfig {
         template.setEnableTransactionSupport(true);
         return template;
 
+    }*/
+
+    private <T> RedisTemplate<String,T> genericRedisTemplate(Class<T> valueType){
+        RedisTemplate<String, T> template = new RedisTemplate<>();
+        template.setConnectionFactory(jedisConnectionFactory());
+        template.setValueSerializer(new Jackson2JsonRedisSerializer(valueType));
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new Jackson2JsonRedisSerializer(valueType));
+        template.setEnableTransactionSupport(true);
+        return template;
+    
     }
 
+    @Bean
+    RedisTemplate objectRedisTemplate() {
+        return genericRedisTemplate(Object.class);
+    }
+    
+
+    @Bean
+    RedisTemplate<String, PublishedICDMetadata> publishedICDMetadataTemplate(){
+        return genericRedisTemplate(PublishedICDMetadata.class);
+    }
+
+    @Bean
+    RedisTemplate<String, PipelineFailureDetails> failurDetailsTemplate(){
+        return genericRedisTemplate(PipelineFailureDetails.class);
+    }
+
+    @Bean
+    RedisTemplate<String, PipelineFailure> failureTemplate(){
+        return genericRedisTemplate(PipelineFailure.class);
+    }
+
+    
+  
     
 }
