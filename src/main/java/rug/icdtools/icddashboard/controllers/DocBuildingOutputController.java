@@ -64,8 +64,8 @@ public class DocBuildingOutputController {
             PublishedICDMetadata metadata = docServices.getPublishedDocumentMetadata(icdid);
             return metadata;
         } catch (NonExistingResourceException ex) {
-            Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.INFO, "Resource not found:"+ex.getLocalizedMessage(), ex);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found:"+ex.getLocalizedMessage(),ex);
+            Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.INFO, "Resource not found:"+ex.getLocalizedMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found:"+ex.getLocalizedMessage());
         }
         
     }    
