@@ -8,8 +8,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -21,9 +25,19 @@ import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 
 @Configuration
 @EnableTransactionManagement
-public class RedisConfig {
+public class RedisConfig extends CachingConfigurerSupport {
 
-    //TODO remove deprecated methods: https://github.com/cuixiao941010/question/blob/75247b1108eaf02fc186fd13475ec243ee79bbca/src/main/java/com/cx/question/config/RedisConfiguration.java
+   
+    @Bean
+    public JedisClientConfiguration jedisClientConfiguration() {
+        JedisClientConfiguration.JedisPoolingClientConfigurationBuilder JedisPoolingClientConfigurationBuilder = (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
+        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
+        genericObjectPoolConfig.setMaxIdle(64);
+        genericObjectPoolConfig.setMaxTotal(64);
+        genericObjectPoolConfig.setMinIdle(5);
+        return JedisPoolingClientConfigurationBuilder.poolConfig(genericObjectPoolConfig).build();
+    }
+
     
     @Bean
     JedisConnectionFactory jedisConnectionFactory() {
@@ -34,13 +48,24 @@ public class RedisConfig {
             if (redisUrl==null){
                 throw new RuntimeException("REDIS_URL sys env not defined.");
             }
+            
             URI redistogoUri = new URI(redisUrl);
+
+            RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
+            redisStandaloneConfiguration.setDatabase(0);
+            redisStandaloneConfiguration.setHostName(redistogoUri.getHost());
+            redisStandaloneConfiguration.setPassword(redistogoUri.getUserInfo().split(":", 2)[1]);
+            redisStandaloneConfiguration.setPort(redistogoUri.getPort());
+            return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration());
+
+
+            /*
             JedisConnectionFactory jedisConnFactory = new JedisConnectionFactory();
             jedisConnFactory.setUsePool(true);
             jedisConnFactory.setHostName(redistogoUri.getHost());
             jedisConnFactory.setPort(redistogoUri.getPort());
             jedisConnFactory.setPassword(redistogoUri.getUserInfo().split(":", 2)[1]);
-            return jedisConnFactory;
+            return jedisConnFactory;*/
         } catch (URISyntaxException ex) {
             Logger.getLogger(RedisConfig.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("Malformed REDIS URI. Connection failed:"+ex.getLocalizedMessage(),ex);
