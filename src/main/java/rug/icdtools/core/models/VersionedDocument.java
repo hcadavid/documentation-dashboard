@@ -8,15 +8,23 @@ import java.util.Objects;
 
 public class VersionedDocument{
     
-    private final String docName;
+    private String docName;
     
-    private final String versionTag;
-    
-    public VersionedDocument(String docName, String versionTag) {
-        this.docName = docName;
-        this.versionTag = versionTag;
+    private String versionTag;
+
+    public VersionedDocument() {
     }
 
+    public void setDocName(String docName) {
+        this.docName = docName;
+    }
+
+    public void setVersionTag(String versionTag) {
+        this.versionTag = versionTag;
+    }
+    
+    
+    
     public String getDocName() {
         return docName;
     }

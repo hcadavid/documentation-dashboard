@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import rug.icdtools.core.models.PublishedICDMetadata;
-import rug.icdtools.icddashboard.models.ICDStatus;
+import rug.icdtools.icddashboard.models.ICDStatusDescription;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.services.DocumentationServices;
@@ -109,7 +109,7 @@ public class DocBuildingOutputController {
 
     @CrossOrigin
     @GetMapping("/v1/icds")
-    Collection<ICDStatus> getICDs() {
+    Collection<ICDStatusDescription> getICDs() {
         return docServices.getRegisteredICDs();
     }
 

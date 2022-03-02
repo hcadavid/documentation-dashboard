@@ -15,7 +15,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Service;
 import rug.icdtools.core.models.PublishedICDMetadata;
-import rug.icdtools.icddashboard.models.ICDStatus;
+import rug.icdtools.icddashboard.models.ICDStatusDescription;
+import rug.icdtools.icddashboard.models.ICDStatusType;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 
@@ -73,7 +74,8 @@ public class DocumentationServices {
                 operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), metadata);
                 String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
                 String docVersion = metadata.getMetadata().get("COMMIT_TAG");
-                ICDStatus docLastVersionStatus = new ICDStatus(icdid,docVersion,"Published on "+creationTimeStamp);
+                ICDStatusDescription docLastVersionStatus = new ICDStatusDescription(icdid,docVersion,ICDStatusType.PUBLISHED);
+                docLastVersionStatus.setPublishedDocDetails(metadata);
                 operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), docLastVersionStatus);
                 operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS, icdid,docVersion), metadata);
                 return operations.exec();
@@ -132,7 +134,7 @@ public class DocumentationServices {
                     operations.opsForSet().add(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);                    
                 }
                 
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatus(icdid,version,"Document building failed."));                                      
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatusDescription(icdid,version,ICDStatusType.UNPUBLISHED));                                      
                 //add the details of the failure
                 operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), failureDesc);
                 
@@ -155,9 +157,9 @@ public class DocumentationServices {
         }
     }
 
-    public Collection<ICDStatus> getRegisteredICDs() {
-        HashOperations<String,String,ICDStatus> hashops = redisTemplate.opsForHash();
-        Map<String,ICDStatus> entries = hashops.entries(ICD_STATUSES_HASH_KEY);
+    public Collection<ICDStatusDescription> getRegisteredICDs() {
+        HashOperations<String,String,ICDStatusDescription> hashops = redisTemplate.opsForHash();
+        Map<String,ICDStatusDescription> entries = hashops.entries(ICD_STATUSES_HASH_KEY);
         return entries.values();        
     }
 
