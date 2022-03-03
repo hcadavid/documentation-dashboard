@@ -9,5 +9,5 @@ package rug.icdtools.icddashboard.models;
  * @author hcadavid
  */
 public enum ICDStatusType {
-    PUBLISHED, UNPUBLISHED, DEPENDENCY_UPDATED;
+    PUBLISHED, UNPUBLISHED, DEPENDENCY_UPDATED, PUBLISHED_FAILED_UPDATE;
 }

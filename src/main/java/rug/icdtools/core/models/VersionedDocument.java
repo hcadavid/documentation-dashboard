@@ -15,6 +15,13 @@ public class VersionedDocument{
     public VersionedDocument() {
     }
 
+    public VersionedDocument(String docName, String versionTag) {
+        this.docName = docName;
+        this.versionTag = versionTag;
+    }
+
+    
+    
     public void setDocName(String docName) {
         this.docName = docName;
     }
