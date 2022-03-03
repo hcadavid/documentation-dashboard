@@ -23,6 +23,11 @@ public class ICDStatusDescription implements Serializable {
         this.status = status;
     }
 
+    public ICDStatusDescription() {
+    }
+
+    
+    
     public String getICDname() {
         return ICDname;
     }

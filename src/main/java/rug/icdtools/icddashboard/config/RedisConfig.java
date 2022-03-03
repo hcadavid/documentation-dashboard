@@ -20,8 +20,10 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import rug.icdtools.core.models.PublishedICDMetadata;
+import rug.icdtools.core.models.VersionedDocument;
 import rug.icdtools.icddashboard.models.PipelineFailure;
 import rug.icdtools.icddashboard.models.PipelineFailureDetails;
+import rug.icdtools.icddashboard.models.ICDStatusDescription;
 
 @Configuration
 @EnableTransactionManagement
@@ -121,7 +123,16 @@ public class RedisConfig extends CachingConfigurerSupport {
         return genericRedisTemplate(PipelineFailure.class);
     }
 
-    
-  
+
+    @Bean
+    RedisTemplate<String, VersionedDocument> versionedDocumentTemplate(){
+        return genericRedisTemplate(VersionedDocument.class);
+    }
+
+    @Bean
+    RedisTemplate<String, ICDStatusDescription> icdStatusDescriptionTemplate(){
+        return genericRedisTemplate(ICDStatusDescription.class);
+    }
+
     
 }

@@ -5,6 +5,7 @@
 package rug.icdtools.icddashboard.services;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,13 @@ public class DocumentationServices {
     
     @Autowired
     private RedisTemplate<String, PublishedICDMetadata> publishedICDsTeamplate;
+    
+    @Autowired
+    private RedisTemplate<String, VersionedDocument> versionedDocumentTemplate; 
+    
+    @Autowired
+    private RedisTemplate<String, ICDStatusDescription> icdStatusDescriptionTemplate;
+    
 
 
     
@@ -53,12 +61,13 @@ public class DocumentationServices {
      */    
     //icds:{docname}:{version} 
     private static final String ICD_STATUS = "icds:%s:status";
-    private static final String ICD_CURRENT_VERSION = "icds:%s:current_version";
-    private static final String ICD_OTHER_VERSIONS = "icds:%s:%s";
+    private static final String ICD_CURRENT_VERSION_METADATA = "icds:%s:current_version_metadata";
+    private static final String ICD_CURRENT_VERSION = "icds:%s:current_version";    
+    private static final String ICD_OTHER_VERSIONS_METADATA = "icds:%s:%s";
     private static final String ICD_FAILED_BUILDS_LIST = " icds:%s:failed_builds_list";
     private static final String ICD_FAILED_BUILDS_SET = " icds:%s:failed_builds_set";
     private static final String ICD_FAILED_BUILD_ERRORS = " icds:%s:failed_builds:%s";
-    private static final String ICD_REFERENCED_BY = "icds:%s:%s:referenced_by";
+    private static final String ICD_REFERENCED_BY = "icds:%s:referenced_by";
     private static final String ICD_STATUSES_HASH_KEY = "icdstatuses";
 
     /**
@@ -70,27 +79,53 @@ public class DocumentationServices {
      */
     public PublishedICDMetadata updateCurrentlyPublishedICD(String icdid, PublishedICDMetadata metadata) throws DocumentationServicesException {        
         checkMetadataForCompleteness(metadata);
+
+        String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
+        String docVersion = metadata.getMetadata().get("COMMIT_TAG");
+        
+        Set<VersionedDocument> dependentDocuments = versionedDocumentTemplate.opsForSet().members(String.format(ICD_REFERENCED_BY, icdid));
+        Set<ICDStatusDescription> currentDependendDocumentStatuses = new LinkedHashSet<>();
+        
+        HashOperations<String,String,ICDStatusDescription> hashOps= icdStatusDescriptionTemplate.opsForHash();
+        
+        for (VersionedDocument dependentDoc : dependentDocuments) {
+            currentDependendDocumentStatuses.add(hashOps.get(ICD_STATUSES_HASH_KEY, String.format(ICD_STATUS, dependentDoc.getDocName())));
+        }
+
         List<Object> txResults = redisTemplate.execute(new SessionCallback<List<Object>>() {
             @Override
             public List<Object> execute(RedisOperations operations) throws DataAccessException {
                 operations.multi();
-                operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), metadata);
-                String creationTimeStamp=metadata.getMetadata().get("CREATION_DATE");
-                String docVersion = metadata.getMetadata().get("COMMIT_TAG");
-                ICDStatusDescription docLastVersionStatus = new ICDStatusDescription(icdid,docVersion,ICDStatusType.PUBLISHED);
-                docLastVersionStatus.setPublishedDocDetails(metadata);
-                
+
+                //create/update document's 'current' version metadata
+                operations.opsForValue().set(String.format(ICD_CURRENT_VERSION_METADATA, icdid), metadata);
+                operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), docVersion);
+
                 //update document status
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), docLastVersionStatus);
-                
+                ICDStatusDescription docLastVersionStatus = new ICDStatusDescription(icdid, docVersion, ICDStatusType.PUBLISHED);
+                docLastVersionStatus.setPublishedDocDetails(metadata);
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY, String.format(ICD_STATUS, icdid), docLastVersionStatus);
+
+                //update status of documents that depend on this one
+                for (ICDStatusDescription dependentDocCurrentStatusDesc : currentDependendDocumentStatuses) {
+                    //Potential race condition: the dependent document status could get updated right after a document it depends on fires its update.                    
+                    //The 'current_version' key of the dependent documents whose status will be updated is watched to make the transaction conditional
+                    //on this value not changig during the transaction.
+                    operations.watch(String.format(ICD_CURRENT_VERSION, dependentDocCurrentStatusDesc.getICDname()));
+
+                    //get the metadata and update it with the new status
+                    dependentDocCurrentStatusDesc.setStatus(ICDStatusType.DEPENDENCY_UPDATED);
+                    operations.opsForHash().put(ICD_STATUSES_HASH_KEY, String.format(ICD_STATUS, dependentDocCurrentStatusDesc.getICDname()), dependentDocCurrentStatusDesc);
+                }
+
                 //Update document dependencies' indexes
                 Set<VersionedDocument> referencedDocs = metadata.getReferencedDocs();
-                for (VersionedDocument referencedDoc:referencedDocs){                    
-                    operations.opsForSet().add(String.format(ICD_REFERENCED_BY, referencedDoc.getDocName(),referencedDoc.getVersionTag()), new VersionedDocument(icdid,docVersion).toString());                    
+                for (VersionedDocument referencedDoc : referencedDocs) {
+                    operations.opsForSet().add(String.format(ICD_REFERENCED_BY, referencedDoc.getDocName()), new VersionedDocument(icdid, docVersion));
                 }
-                
-                //store metadata of this particular version (so a document status version history can be traced)
-                operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS, icdid,docVersion), metadata);
+
+                //store metadata of this particular version (so a document version history can be traced)
+                operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS_METADATA, icdid, docVersion), metadata);
                 return operations.exec();
             }
         });
@@ -134,6 +169,7 @@ public class DocumentationServices {
     public PipelineFailureDetails registerFailedPipeline(String icdid, String version,PipelineFailureDetails failureDesc, String pipelineid) {
 
         boolean firstPipelineFailure = !redisTemplate.opsForSet().isMember(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);
+        boolean alreadyPublished = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION_METADATA, icdid))!=null;
         
         List<Object> txResults = redisTemplate.execute(new SessionCallback<List<Object>>() {
             @Override
@@ -147,7 +183,7 @@ public class DocumentationServices {
                     operations.opsForSet().add(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);                    
                 }
                 
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatusDescription(icdid,version,ICDStatusType.UNPUBLISHED));                                      
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatusDescription(icdid,version,alreadyPublished?ICDStatusType.PUBLISHED_FAILED_UPDATE:ICDStatusType.UNPUBLISHED));                                      
                 //add the details of the failure
                 operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), failureDesc);
                 
@@ -187,7 +223,7 @@ public class DocumentationServices {
      * @return  
      */
     public PublishedICDMetadata getPublishedDocumentMetadata(String icdid) throws NonExistingResourceException{
-        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION, icdid));
+        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION_METADATA, icdid));
         if (metadata==null){
             throw new NonExistingResourceException("No available metadata for the last version of document "+icdid);
         }
@@ -195,10 +231,10 @@ public class DocumentationServices {
             return metadata;
         }
     }
-   
+    
 
     public PublishedICDMetadata getPublishedDocumentMetadata(String icdid, String versionTag) throws NonExistingResourceException{
-        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_OTHER_VERSIONS, icdid, versionTag));
+        PublishedICDMetadata metadata = publishedICDsTeamplate.opsForValue().get(String.format(ICD_OTHER_VERSIONS_METADATA, icdid, versionTag));
         if (metadata==null){
             throw new NonExistingResourceException(String.format("No available metadata for version %s of document %s",versionTag,icdid));
         }
