@@ -103,8 +103,12 @@ public class DocumentationServices {
                 operations.opsForValue().set(String.format(ICD_CURRENT_VERSION, icdid), docVersion);
 
                 //update document status
-                ICDStatusDescription docLastVersionStatus = new ICDStatusDescription(icdid, docVersion, ICDStatusType.PUBLISHED);
+                ICDStatusDescription docLastVersionStatus = new ICDStatusDescription();
+                docLastVersionStatus.setICDname(icdid);
+                docLastVersionStatus.setLastPublishedVersion(docVersion);
+                docLastVersionStatus.setStatus(ICDStatusType.PUBLISHED);
                 docLastVersionStatus.setPublishedDocDetails(metadata);
+
                 operations.opsForHash().put(ICD_STATUSES_HASH_KEY, String.format(ICD_STATUS, icdid), docLastVersionStatus);
 
                 //update status of documents that depend on this one
@@ -171,13 +175,16 @@ public class DocumentationServices {
     public PipelineFailureDetails registerFailedPipeline(String icdid, String version,PipelineFailureDetails failureDesc, String pipelineid) {
 
         boolean firstPipelineFailure = !redisTemplate.opsForSet().isMember(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);
-        boolean alreadyPublished = publishedICDsTeamplate.opsForValue().get(String.format(ICD_CURRENT_VERSION_METADATA, icdid))!=null;
         
+        HashOperations<String,String,ICDStatusDescription> hashOps= icdStatusDescriptionTemplate.opsForHash();        
+        ICDStatusDescription previousStatus = hashOps.get(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid));
+                                        
         List<Object> txResults = redisTemplate.execute(new SessionCallback<List<Object>>() {
             @Override
             public List<Object> execute(RedisOperations operations) throws DataAccessException {
                 operations.multi();
                 
+                //This is included for an scenario where the errors of multiple documents within the same pipeline are reported:
                 //register the pipelines date/id in a list, to keep their order, and in a set for 'isMember' evaluation in O(1))
                 //As multiple failures can be reported for the same pipeline, this operation is performed only once.               
                 if (firstPipelineFailure) {                    
@@ -185,7 +192,22 @@ public class DocumentationServices {
                     operations.opsForSet().add(String.format(ICD_FAILED_BUILDS_SET, icdid), pipelineid);                    
                 }
                 
-                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), new ICDStatusDescription(icdid,version,alreadyPublished?ICDStatusType.PUBLISHED_FAILED_UPDATE:ICDStatusType.UNPUBLISHED));                                      
+                //Update the status of the document.
+                ICDStatusDescription updatedStatus = null;
+                
+                if (previousStatus!=null){
+                    updatedStatus = new ICDStatusDescription();
+                    updatedStatus.setICDname(icdid);
+                    updatedStatus.setLastFailedToPublishVersion(version);                    
+                    updatedStatus.setStatus(ICDStatusType.UNPUBLISHED);
+                }                
+                else{
+                    updatedStatus = previousStatus;
+                    updatedStatus.setLastFailedToPublishVersion(version);
+                    updatedStatus.setStatus(ICDStatusType.PUBLISHED_FAILED_UPDATE);
+                }
+                operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), updatedStatus); 
+                
                 //add the details of the failure
                 operations.opsForList().leftPush(String.format(ICD_FAILED_BUILD_ERRORS,icdid,pipelineid), failureDesc);
                 

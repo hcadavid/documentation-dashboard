@@ -13,21 +13,15 @@ import rug.icdtools.core.models.PublishedICDMetadata;
  */
 public class ICDStatusDescription implements Serializable {
     String ICDname;
-    String version;
+    String lastPublishedVersion;
+    String lastFailedToPublishVersion;
     ICDStatusType status;
     PublishedICDMetadata publishedDocDetails;
 
-    public ICDStatusDescription(String ICDname, String version, ICDStatusType status) {
-        this.ICDname = ICDname;
-        this.version = version;
-        this.status = status;
-    }
 
     public ICDStatusDescription() {
     }
 
-    
-    
     public String getICDname() {
         return ICDname;
     }
@@ -36,12 +30,20 @@ public class ICDStatusDescription implements Serializable {
         this.ICDname = ICDname;
     }
 
-    public String getVersion() {
-        return version;
+    public String getLastPublishedVersion() {
+        return lastPublishedVersion;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setLastPublishedVersion(String lastPublishedVersion) {
+        this.lastPublishedVersion = lastPublishedVersion;
+    }
+
+    public String getLastFailedToPublishVersion() {
+        return lastFailedToPublishVersion;
+    }
+
+    public void setLastFailedToPublishVersion(String lastFailedToPublishVersion) {
+        this.lastFailedToPublishVersion = lastFailedToPublishVersion;
     }
 
     public ICDStatusType getStatus() {
@@ -60,6 +62,9 @@ public class ICDStatusDescription implements Serializable {
         this.publishedDocDetails = publishedDocDetails;
     }
 
+    
+    
+    
 
     
     
