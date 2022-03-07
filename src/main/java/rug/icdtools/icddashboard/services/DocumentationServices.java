@@ -204,7 +204,9 @@ public class DocumentationServices {
                 else{
                     updatedStatus = previousStatus;
                     updatedStatus.setLastFailedToPublishVersion(version);
-                    updatedStatus.setStatus(ICDStatusType.PUBLISHED_FAILED_UPDATE);
+                    if (previousStatus.getStatus().equals(ICDStatusType.PUBLISHED)){
+                        updatedStatus.setStatus(ICDStatusType.PUBLISHED_FAILED_UPDATE);
+                    }                                        
                 }
                 operations.opsForHash().put(ICD_STATUSES_HASH_KEY,String.format(ICD_STATUS,icdid), updatedStatus); 
                 
