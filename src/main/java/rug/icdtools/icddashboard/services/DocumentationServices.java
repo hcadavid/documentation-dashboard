@@ -195,7 +195,7 @@ public class DocumentationServices {
                 //Update the status of the document.
                 ICDStatusDescription updatedStatus = null;
                 
-                if (previousStatus!=null){
+                if (previousStatus==null){
                     updatedStatus = new ICDStatusDescription();
                     updatedStatus.setICDname(icdid);
                     updatedStatus.setLastFailedToPublishVersion(version);                    
