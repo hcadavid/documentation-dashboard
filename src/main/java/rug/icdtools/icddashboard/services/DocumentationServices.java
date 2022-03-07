@@ -63,6 +63,7 @@ public class DocumentationServices {
     private static final String ICD_STATUS = "icds:%s:status";
     private static final String ICD_CURRENT_VERSION_METADATA = "icds:%s:current_version_metadata";
     private static final String ICD_CURRENT_VERSION = "icds:%s:current_version";    
+    private static final String ICD_VERSIONS = "icds:%s:version_numbers";    
     private static final String ICD_OTHER_VERSIONS_METADATA = "icds:%s:%s";
     private static final String ICD_FAILED_BUILDS_LIST = " icds:%s:failed_builds_list";
     private static final String ICD_FAILED_BUILDS_SET = " icds:%s:failed_builds_set";
@@ -126,6 +127,7 @@ public class DocumentationServices {
 
                 //store metadata of this particular version (so a document version history can be traced)
                 operations.opsForValue().set(String.format(ICD_OTHER_VERSIONS_METADATA, icdid, docVersion), metadata);
+                operations.opsForSet().add(String.format(ICD_VERSIONS,icdid), docVersion);
                 return operations.exec();
             }
         });
@@ -242,5 +244,7 @@ public class DocumentationServices {
             return metadata;
         }
     }    
-    
+
+
+
 }

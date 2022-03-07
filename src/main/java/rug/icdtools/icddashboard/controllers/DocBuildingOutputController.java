@@ -27,7 +27,7 @@ import rug.icdtools.icddashboard.services.DocumentationServicesException;
 import rug.icdtools.icddashboard.services.NonExistingResourceException;
 
 /**
- * TODO: add transactions: https://github.com/spring-projects/spring-data-redis/blob/main/src/main/asciidoc/reference/redis-transactions.adoc
+ * 
  * @author hcadavid
  */
 @RestController
