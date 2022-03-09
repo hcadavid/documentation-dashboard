@@ -6,10 +6,12 @@ package rug.icdtools.icddashboard.controllers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,7 +27,7 @@ import rug.icdtools.icddashboard.models.PipelineFailureDetails;
 import rug.icdtools.icddashboard.services.DocumentationServices;
 import rug.icdtools.icddashboard.services.DocumentationServicesException;
 import rug.icdtools.icddashboard.services.NonExistingResourceException;
-
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 /**
  * 
  * @author hcadavid
@@ -36,11 +38,17 @@ public class DocBuildingOutputController {
     @Autowired
     private DocumentationServices docServices;
     
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
+    
     @GetMapping("/test")
-    String test() {
+    String test() {        
         return "Working";
     }
 
+    private void notifyWebClients(){
+        simpMessagingTemplate.convertAndSend("/ws/topic/update", new Random(System.currentTimeMillis()).nextLong());
+    }
     
     @CrossOrigin
     @PutMapping("/v1/icds/{icdid}/current")
@@ -48,6 +56,7 @@ public class DocBuildingOutputController {
         
         try {
             docServices.updateCurrentlyPublishedICD(icdid, metadata);
+            notifyWebClients();
         } catch (DocumentationServicesException ex) {
             Logger.getLogger(DocBuildingOutputController.class.getName()).log(Level.SEVERE, "Invalid request:"+ex.getLocalizedMessage(), ex);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request:"+ex.getLocalizedMessage(),ex);
@@ -90,6 +99,7 @@ public class DocBuildingOutputController {
     public PipelineFailureDetails addFailedPipelineOutput(@PathVariable String icdid,@PathVariable String version, @RequestBody PipelineFailureDetails desc, @PathVariable String pipelineid) {
 
         docServices.registerFailedPipeline(icdid, version, desc, pipelineid);
+        notifyWebClients();
         return desc;
 
     }
